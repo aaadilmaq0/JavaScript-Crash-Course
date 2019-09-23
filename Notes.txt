@@ -1,0 +1,556 @@
+Objects are collections of name-value pairs. (the perfect definition to the questio - What is an Object in JS?)
+
+When a program is run its Execution Context is created first. Execution context (EC) contain Global object(the window), defines unqiue 'this' keyword to point out global variables/functios and contains your code.
+
+Global means "not inside any function".
+
+Hoisting - Setting up memory spaces for variables and functions.
+    Two phases - Creation phase and Execution Phase
+
+All variables in javascript are set to undefined initially (creation phase of EC).
+
+Functions are sitting in memory spaces in their entirety (creation phase of EC).
+    that is why the following code will execute even when function is called before declaration -
+        a(); function a(){ console.log("run); } 
+
+Variables are assigned in Execution phase of EC
+    that is why this code will print "undefined" - 
+        console.log(a); var a = 75;
+    and this will print 75 -
+        var a = 75; console.log(a);
+
+undefined vs Not Defined vs null - 
+    undefined means the value is declared but it has not been set(or given a value)
+        var a; console.log(a);
+        this will print undefined
+    not defined (reference error) means the variable itself is not declared
+        console.log(b);
+        this will throw a not defined reference error as b is not in the memory itself
+    null is a value given to a variable to show it is empty. Basically, null is an empty value. But it still is a value which shows the variable is empty, that means it is not undefined.
+        var a = null; if(a==null) console.log("null"); else console.log("undefined);
+            ^the above will print null
+        var a; if(a==null) console.log("null"); else console.log("undefined);
+            ^the above will print undefined
+
+* IMPORTANT - if(undefined) is equivalend to if(null).
+
+* IMPORTANT - undefined is the special value set to new variables. Although you can, but NEVER SET ANY VARIABLE AS undefined. It helps in debugging. This we can know the variable's value hasn't got assigned. 
+    If at all you have to set empty value, just use null
+
+Execution stack - Stack of Execution Contexts of the program. The top stack is the stack which is being executed.
+    When a function is called, a new Execution context is created and is palced on the top of Execution stack and it starts getting executed.
+
+synchronous - one at a time
+asynchronous - more than one at a time
+callback -  callback is a function that is to be executed after another function has finished executing — hence the name ‘call back’.
+
+* IMPORTANT - Javascript is synchronous, single threaded. It means one command at a time and in order.
+    for eg - 
+        console.log(1);
+        console.log(2);
+        console.log(3);
+    this will print-
+        1
+        2
+        3
+    But ... (read the next point).
+
+* IMPORTANT - When an asynchronous request is made, JS will handle it seprately in a callback without waiting for the response to come. It will continue executing from the next line without waiting for the response.
+    for eg -
+        console.log(1);
+        request.get(".....").then(response=>console.log(2));
+        console.log(3);
+    this will print-
+        1
+        3
+        2
+    as javascript will go onto the next line without waiting for response of the async request.
+    However, we can use async and await keywords to wait for the async request to be handled first.
+    for eg -
+        async function req(){
+            console.log(1);
+            await request.get("....").then(response=>console.log(2));
+            console.log(3);
+        }
+    this will print-
+        1
+        2
+        3
+* Call Stack : A stack where each synchronous operation is pushed, and popped when that operation is complete. A new operation cannot be pushed when the stack is not empty.
+
+* IMPORTANT - Event/Callback Queue is a queue of all the event triggered which are binded to any function in the script. When an event is triggred, the event goes as a parameter in a function where it can be handled.
+
+** Event Loop :VVIMPORTANT => JavaScript line by line pushes and pops synchronous operations in the call stack. However, in case of an asynchronous task, it pass the task to the browser. The browser will then handle that ask and after it has been handled, it will be pushed to HEAD of callback queue.
+    - When the Call stack is empty, ONLY THEN, event loop searches for any pending callback in Callback queue starting from tail. If it founds pending callbacks, it pushes them in the call stack, one by one, one at a time.
+    - Example-
+        console.log("1"); //operation 1
+        console.log("2"); //operation 2
+        setTimeout(()=>{
+            console.log("3");
+        },0); //operation 3
+        //.
+        //.
+        //.
+        //let's say here is some block of synchronous code which take 5 seconds
+        //.
+        //.
+        //.
+        //.
+        console.log("4"); //operation 4
+
+        What will happen? Let's see.
+            1. operation 1 goes to call stack. prints "1", popped
+            2. operation 2 goes to call stack. prints "2", popped
+            3. operation 3 goes to call stack, here the call stack sees it's an async operation. So, sends it to the browser to handle. Although the time is 0, it is async. Browser Handles it and sends it to callback queueu.
+                **IMPORTANT- 0 here doesn't mean after 0 seconds. It means after at least 0 seconds, after the current call stack is empty after doing all synchronous tasks.
+            4. some long synchronous code takes 5 seconds
+            5. operation 4 goes to call stack, prints "4", popped.
+            6. Now the call stack is empty. Event loop checks the callback queue. Sees that a callback is waiting to be invoked. Pushes it into call stack. Prints "3", popped.
+            7. Event loop sees call stack and callback queue is empty means all tasks are complete.
+            
+Variable Environment - Each variable refers to the variable in its own Execution context if declared else element before the current scope. Eg-
+        function b(){ x = 5; }
+        function a(){ var x = 4; b() }
+        var x = 3;
+        a();
+    In this example, when var 'x' is initialized to 3, it refers to the first EC's 'x'.
+    When function 'x' is invoked, var 'x' is declared again refers to 'x' in it's own EC. So function a has its unique 'x' = 4
+    When b() is invoked, it doesn't declare its own 'x'. So, it will change the global 'x' as it will search for that element in the outer environent. Outer environent for b() (and a ()) is global EC. If there's function inside a function, then the nested function's outer environent is the parent function. So, value of global 'x' will be changed from 3 to 5.
+
+Scope : (where)/(area in which) a variable is available in your code.
+
+var vs let vs const -
+    var is used to declare a variable which can be modified later or redeclared. var has a functional scope i.e. after defining a var variable, one can use it anywhere throughout the function.
+        for eg-
+            if(2<3){
+                var a = 5;
+                console.log(a);
+            }
+            console.log(a);
+        this will print -
+            5
+            5
+
+    let is used when we want a block scope variable i.e. it cannot be used outside the block it's declared in. let cannot be redeclared.
+        for eg-
+            if(2<3){
+                let a = 5;
+                console.log(a);
+            }
+            console.log(a);
+        this will print -
+            5
+            error as a isn't declared in that scope
+    
+    const is like let. the only difference is that const's value cannot be changed after initializing it for the first time.
+
+Dynamic Typing 
+    : you don't tell javascript engine which datatype a variable holds, because it figures it out while your code is running.
+    : variables can hold different datatypes at different times in a program
+    : example -
+        var a = 5.5;
+        a = 'hey there';
+        a = false;
+        this won't give an error
+
+Primitive data type - holds single value i.e. it is not an object (key-value pair).
+
+Although not to be mentioned while declaring a variable, js has 6 Primitive types -
+    - undefined
+    - null
+    - Boolean
+    - Number
+    - String
+    - Symbol (not yet fully developed)
+
+Operator: A function that is written differenly. Each time you use an operator, you pass the oprands as arguments to a function
+    - for example, when we write `a+b` then a and b ar passed to a function where code for adding them is written
+    - we write in Infix expression i.e. the operator sits in between the operands, however js converts this into an prefix/postfix expression and sends the operands as arguments in a function
+
+Operator precedence - A file is included for operator precence. But for common arithmetic operations - we can use the term BEDMAS.
+    - Highest priority is B (brackets). That means we will solve the Bracket first
+    - Then exponent
+    - Then multiplication/modulus and division. They have the same priority. Whichever comes first will be evaluated.
+    - Then addition and subtraction. They have the same priority. Whichever comes first will be evaluated.
+    so what if the priority is equal? How do we decide whether we read 'left-to-right' or 'right-to-left' ? Well here comes the term "associativity".
+
+Associativity: It tells you whether to read left-to-right or right-to-left. All the associativity rules are clearly given in the precedence file.
+    - Example:
+        var a = 5 , b = 6 , c = 7;
+        a = b = c; console.log(a,b,c);
+        The output will be 7 7 7 as for '=' operator the associativity is right-to-left.
+    - Example:
+        console.log(7%5*4/2);
+        As all of them have the same precedence, and the associativity is left-to-right,
+        First 7%5 will be evaluated. Then the result will be multiplied by 2. Then the result will be divided by 2
+
+Coercion:
+    - Converting a value from one type to other
+    - Happens frequently in JS as it is a dynamically typed language.
+    - Example: 
+        console.log(1+2); will print 3 as both dataypes are same.
+        console.log(1+'2') will print 12 as JS decides to coerce 1 to '1'. js developers wrote the language in such a way that if a number and string is added, it will just convert the number into string and concatenate them.
+    * IMPORTANT:
+        if you use '+' as a unary operator before a string, it will try to convert that string into a number
+        for example - console.log(1 + '2') will print 12. But console.log(1+ +'2') will print 3 because the second operand is +'2'. Here the + is a unary operator that converts '2' to 2. So, 1 + +'2' is 1 + 2 = 3.
+
+Comparison operators: 
+    - less than (<), greater than (>) , equal to (==), not equal to (==), greater or equal (>=), less or equal (<=), not (!), these all will return a boolean value.
+    - it's simple when we use two operators. console.log(1>2) returns false and console.log(1<2) returns true. But
+    - it's complex sometimes when we use them together. For Example - 
+        console.log(1<2<3);
+        What should be the out? You must be thinking true. Yes it is true.
+        console.log(3<2<1);
+        Now what? You must be thinking false. But the output will be true. wondering why? let's use our full knowledge till now to solve it.
+        "<" associativity is left-to-right. So first 3<2 will be evaluated. It is false. Now the expression has changed to "false < 1".
+        Now javascript coerces false to number as "<" only takes numbers. false converts to 0. and vice verse. true would convert to 1. and any other number except 0 will be converted to true in Boolean.
+        "false < 1" is actually "0 < 1" which returns true.
+    - special operators === (strictly equal to) and !== (strict not equal to) is used when we need to compare without any type coercion.
+        for example, console.log(false == 0) will print true but (false === 0) will print false;
+
+**IMPORTANT - go throught the equality table to understand more (or to understand how weird javascript is).
+
+Objects - these are name value pairs. value can be either a Primitive/object property or a function. There are multiple ways to create an Object.
+    - var a = new Object();
+    - var a = {};
+    - var a = Object.create(null);
+
+** Computer member access opertor is []. when we type a string value inside this brackets and append this operator to an object, it searches for the proviced key(string in the []) in that object. So, a["type"] searches for "type" key in object a.
+    - dot (.) opertor also does the same thing but we cannot use spaces for keys in that.
+    - a["type"] = "object" will set the "type" key's valye to "object"
+    - one can pass a string inside [] to search for that key. eg:
+        var t = "type"
+        a[t] means a["type"]
+    - you can also set a property directly while makin an object. eg:
+        var a = { type : "object" }
+
+    - property can be another object
+        var a = { address : { street : "ny22" }}
+        here address property is another object
+
+JSON:
+     - javascript object notation
+     - inspired by object literal notation in Javascript
+     ** IMPORTANT - JSON is not the same as Javascript object literals
+     - JSON is like a string(text) representation of an Object
+     - In JSON, the property names (keys) are also wrapped in quotes. Example:
+        {
+            "address" : {
+                "street" : "ny22"
+            },
+            "phone" : 012345
+        }
+        ^ this is a json.
+    - JSON is generally used for transfering data over the internet as it is easier to read.
+    - JSON is a pre built class in javascript as it is similar to objects.
+    - JSON.parse(string) method converts a json string to object
+    - JSON.stringify(object) converts an object to json string
+
+*** IMPORTANT: Functions
+    - In many lanugages functions are blocks of code, which when reuqired are pushed into memory and executed to perform a task.
+    - in javascript, FUNCTIONS ARE OBJECTS. They are first class objects,  this means that they can be passed as arguments to other functions, assigned to variables or even stored as elements in various data structures.
+        declarations : var a = function(){}, function a(){}
+    - that also means they are in memory just like other variables
+    - Functions are special types of objects. Which means that they can have their own set of properties(key-value pairs).
+    - While declaring a function, default properties like name, protoype, arguements,functiom body are set by default. We can set other properties also as we set on objects. for example -
+        function fun(){
+            //lines of code
+        }
+        fun.owner = "Adil";
+        console.log(fun.owner);
+        ^this will print "Adil"
+    - Most importantly, functions have executable lines of code which can be run whenever we want.
+
+function statement - when a function is just evaluated and it does not return a value, it is a function statement. So, it is directly put into memory during the creation phase of execution context. for example - 
+    function a() {}
+    ^ this is a function statement as the function doesn't return anything and is directly put into memory and not assigned to a variable.
+    so,
+        a();
+        function a(){};
+    this will not throw an error as it is just a function statement and directly put into memory. so, while executing a can be accessed as it is in memory.
+
+function expression - when a function returns a value and is stored in a variable, it becomes an expression. example -
+    var a = function(){}
+    ^ this is a function expression. the function is stored in variable a.
+    so,
+        a();
+        var a = function(){};
+    this will give an error as a is a variable and variable are initialized to "undefined" in to execution context creation. so while executing, a will be undefined until the execution reaches the declaration line.
+
+Pass by value: When value of a variable is copied into a new variable or passing to a function as arguments and a new memory location is created, then this process is called pass by value.
+    - works when we assign/pass a Primitive value
+    - var a = 5; var b = a; here, a new memory location is created for b as a is Primitive type and value of a is copied to back’
+    - any change in b will not reflect in a
+    - example:
+        var a = 5;
+        var b = a;
+        b = 6;
+        console.log(a);
+        console.log(b);
+        this will print 5 and 6
+
+Pass by reference - When the address of memory location of a variable is copied to the new variable or passed as an arguement in a function, then this process is called as pass by reference. Happens in the case of Objects.
+    - works when we assign/pass an Object(reference type)
+    - var a = { name : "adil" }; var b = a; here the reference of a will be passed
+    - any changes in b will reflect in above
+    - example:
+        var a = { name : "adil" };
+        var b = a;
+        b.name = "noname";
+        console.log(a);
+        this will print noname as the value in the same memory has been changed.
+    - however, if we assign b or a value which doesn't already exist in memory, it will create a new memory location and assign the new value. example -
+        var a = { name : "adil" };
+        var b = a;
+        a = { surname : "noname" };
+        console.log(b.name);
+        console.log(a.name);
+        this will print adil and undefined because a now contains new Object which doesn't have name property. this is because { surname : "noname" } doesn't point to a variable which is already stored in a memory
+
+**IMPORTANT: 'this' keyword
+    - by default, this keywords points to the variables and functions of the global context, when we are aceesing it directly or inside a function. Example - 
+        name = 'a';
+        this.name = 'b';
+        console.log(this.name);
+        ^this will print b
+
+    - let's look at a function example-
+        name = 'a';
+        function b(){
+            this.name = 'b';
+        }
+        b();
+        console.log(this.name);
+        ^this will also print b
+
+    - BUT THERE ARE SOME WEIRD BEHAVIOURS. Can you tell the output of the following?
+        name = 'a';
+        b : {
+            name : 'b',
+            c : function(){
+                this.name = 'c'
+            }
+        }
+        b.c();
+        console.log(this.name + "," + c.name);
+        ^here, you might be thinking that c,b will be printed as 'this' points to the global context.
+        WRONG. When a function is declared in antoher object, the 'this' of that function points to that object.
+        So the output of the above will be a,c.
+        BUT....
+
+    - SOME MORE WEIRDNESS. Can you tell the output of the following?
+        name = 'a';
+        b : {
+            name : 'b',
+            c : function(){
+                function d(){
+                    this.name = 'd';
+                }
+                d();
+            }
+        }
+        b.c();
+        console.log(this.name + "," + c.name);
+        ^after the concept learned in the previous example, you might think the the output will be a,d as 'this' inside function will point to the Object that function is the part of.
+        But, here comes the weirdness. Most people think it's a bug, maybe, that is not how javascript works. 
+        When you create a function inside a function, then 'this' refers again to the global context varibale.
+        So the output of the program will be d, b. There is no proper definition to explain why. I can only think of one reason.
+        When you use the 'this' keyword in nested functions, it searches for the variable in the parent function/object, if that variable isn't present, it will then point to the global variable.
+
+    - To avoid the above issue, we can simple store reference of an object in a new variable. Example - 
+        name = 'a';
+        b: {
+            name : 'b',
+            c : function(){
+                var self = this;
+                function d(){
+                    self.name = 'd';
+                }
+                d();
+            }
+        }
+        b.c();
+        console.log(this.name + "," + c.name);
+        ^now this will print a,d (as expected);
+
+**IMPORTANT: Arrays
+    - Collection of anything.
+    - Reference data type
+    - As javascript is dynamically typed, it can hold values of different types, whether premitive or reference.
+
+Arguments - The parameters you pass to a funciton. 'arguments' is a keyword in JavaScript which contains them all.
+    - if you console.log(arguments) in a function, it will print array of all parameters
+
+Spread (...) Operator - Spread operator allows an iterable to expand in places where 0+ arguments are expected. It is mostly used in variable array where there is more than 1 values are expected.It allows us the privilege to obtain a list of parameters from an array.
+    - For example:
+        var a = [1,2,3];
+        var b = [4,5];
+        var c = [...a, ...b];
+        console.log(c) will print [1,2,3,4,5]
+    - You can also use it in function parameters which will wrap additional parameters in a array and spread them. For example - 
+        function f(a,b, ...others){}
+        f(1,3,5,6,7,8);
+        here, 1,3 will be passed in a,b respectively and 5,6,7,8 will be contained in other. Then you can use them using the arguments keyword
+
+Immediately Invoked Function Expression (IIFE) - The functions expressions which are created and invoked on the fly, without having to execute it from a seprate statement.
+    - Function statements cannot be invoked Immediately. It needs to be an expression. Eg - 
+        var name = function(){ 
+            return 'John' 
+        }();
+        ^here function will be Immediately invoked and return john which will be stored in name
+    - However, we cannot do it in function statement as function statement requires the function name i.e. it is mandatory. And it is used to call function directly.
+    _ But we can do it by keeping the the function statement between parenthesis (). Example - 
+        (function(){
+            console.log('John'); 
+        }());
+        ^ this will print john
+
+**IMPORTANT: Closure - Closure is a function which returns another functions or,simply, function within which anothere function is defined;
+    - Complex to understand, but easy if you break it into parts.
+    - Example:
+
+        function multiply(a,b,c){
+            function mul(){
+                return a*b*c;
+            }
+            return mul();
+        }
+        console.log(multiply(2,3,4)) will print 24
+
+        ^this right here, is a close. A simple closure. Let's step one level up.
+    - Example2:
+
+        function mul(a){
+            return function(b,c){
+                return a*b*c;
+            }
+        }
+        var res = mul(2);
+
+        What do you think is stored in variable 'res'? As mul returns a function, a function is stored in res.
+        So now, you can invoke res by passing two parameters.
+
+        console.log(res(3,4))
+
+        ^this will print 24 (as it should).
+    - BUT, you might be wondering, from example2, 'res' does'not hold the value of 'a'. So where does 'a' come from?
+      When "mul" returns a function and it is stored in "res", the Execution context of "mul" is deleted, and it is popped out of execution context stack.
+      But, 
+        1. each function has the information of it's outer environment
+        2. When execution context of "mul" is deleted, the memory space is still there and contains all properties.
+      So, even though the EC of "mul" isn't there, it's variable exist in the function's outer environment
+    
+    - Example2 can also be written as - 
+        function mul(a){
+            return function(b){
+                return function(c){
+                    return a*b*c;
+                }
+            }
+        }
+        console.log(mul(a)(b)(c))
+
+CALLBACK:  A function you give to another function, to be run when the other functions finishes executing.
+    - So the function you call, "calls back" the function you gave it, when it finishes. Example -
+        function show(callback){
+            //....
+            //.... statements
+            callback(); //when finished
+        }
+        show(function(){
+            console.log("C)
+        });
+
+bind function - do you want to change what object inside a function the 'this' keyword addresses to? Well, bind is used exactly for this.
+    - bind will change the 'this' keyword inside the function it's applied to. Example -
+        var obj = { name: 'Adil' };
+        function getObj(){
+            console.log(this.name);
+        }
+        getObj();
+        ^this will throw an error because 'this' points to the global execution context here.
+
+    - bind modifies the 'this' value for a function and returns the copy for the same. So we can use it like this- 
+        var obj = { name: 'Adil' };
+        function getObj(surname){
+            console.log(this.name + (surname || ''));
+        }
+
+        var getObj2 = getObj.bind(obj); // here bind will create copy of getObj function and set the 'this' to 'obj' object and return the new funtion into getObj2.
+        getObj2();
+        ^this will print Adil and will not throw any error.
+
+call function - does the same thing as bind, but calls the function at the same time. Example -
+    - getObj.call(obj);
+    - you can also pass arguments. The first arguement is the 'this' keyword object you want to use, second onwards it is arguments.
+      getObj.call(obj, "maq");
+
+apply function - same as call. But arguments need to be enclosed in an array. Example-
+    - getObj.apply(obj, ["maq"])
+
+Protoypal inheritence - Each object in js has a protoype. inheritence means accquiring the properties of some other object.
+    - Exammple - (** Note -- DON'T DO this ever. just for understanding):
+        var a = { firstName : "Adil" };
+        var b = { secondName : "Maq" }
+        console.log(b.firstName) will give an error as expected
+
+        But we can acquire the properties of a by writing this line of code-
+        b.__proto__ = a;
+        ^it adds a's properties to b. So, now b.firstName won't give an error
+
+    - The undercore library (_) has an extend function for safely executing the inheritence. SO, the above example can be re written using the _ library.
+        _.extend(b,a);
+
+Function Constructors and making objects from new operator:
+    -Suppose if you want to make object of some "type".
+    -you can use function construtors. Function constructors are here called constructors as they use the "this" keyword to create and give value to there properties.
+    - to make objects we need to use the "new" keyword alongwith function constructors.
+    - Eg: 
+        function Person(firstname, lastname) {
+             console.log(this);
+            this.firstname = firstname;
+            this.lastname = lastname;
+            console.log('This function is invoked.');
+            this.greet = function(){
+                console.log("Hello, "+firstname);
+            }
+            
+        }
+        var john = new Person('John', 'Doe');
+        console.log(john);
+
+        var jane = new Person('Jane', 'Doe');
+        console.log(jane);
+        ^"new" keyword here makes a new empty object and now the "this" of Person refers to the new object.
+        So, john and jane are two objects of type Person prototype
+
+*CLASSES in JavaScript - A new way to create objects and set the prototype. No, it is not like the classes of any classic OOP concept.
+    - Just another way create object and set the prototype.
+    - Eg: 
+        class Person{
+            construtor(firstame, lastname){
+                this.firstame = firstname;
+                this.lastname = lastname;
+            }
+
+            greet(){
+                console.log("Hello, "+firstname);
+            }
+        }
+        var john = new Person('John', 'Doe');
+        console.log(john);
+
+        var jane = new Person('Jane', 'Doe');
+        console.log(jane);
+        ^this is same as the example before this
+
+typeof - returns the type of variable:
+    - typeof({}) returns object
+    - typeof("adil") returns string
+
+instanceOf - returns true if first operand has the prototype of the second. Example - 
+    - Let's use the above Person class
+    -   let john = {firstname: "adil", lastname: "maq"};
+        let jane = new Person("adil","maq");
+        console.log(john instanceOf Person) // prints false
+        console.log(jane instanceOf Person) // prints true
